@@ -1,0 +1,113 @@
+{
+	"name": "dfcopywithparent",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "bu_csv",
+						"type": "DatasetReference"
+					},
+					"name": "bucsv"
+				},
+				{
+					"dataset": {
+						"referenceName": "dvtable",
+						"type": "DatasetReference"
+					},
+					"name": "dvtable"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "stagingcsv",
+						"type": "DatasetReference"
+					},
+					"name": "staging"
+				}
+			],
+			"transformations": [
+				{
+					"name": "join1"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "AlterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Name as string,",
+				"          {BU Description} as string,",
+				"          ParentBU as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> bucsv",
+				"source(output(",
+				"          createdonbehalfbyyominame as string,",
+				"          statecode as integer,",
+				"          owneridname as string,",
+				"          crc7a_name as string,",
+				"          statuscode as integer,",
+				"          crc7a_budescription as string,",
+				"          crc7a_bu_demoid as string,",
+				"          importsequencenumber as integer,",
+				"          crc7a_parentbuname as string,",
+				"          utcconversiontimezonecode as integer,",
+				"          createdbyyominame as string,",
+				"          modifiedbyname as string,",
+				"          versionnumber as long,",
+				"          modifiedbyyominame as string,",
+				"          timezoneruleversionnumber as integer,",
+				"          owneridtype as string,",
+				"          statuscodename as string,",
+				"          owneridyominame as string,",
+				"          modifiedon as timestamp,",
+				"          modifiedonbehalfbyyominame as string,",
+				"          statecodename as string,",
+				"          createdbyname as string,",
+				"          createdon as timestamp,",
+				"          owningbusinessunitname as string,",
+				"          createdonbehalfbyname as string,",
+				"          modifiedonbehalfbyname as string,",
+				"          overriddencreatedon as timestamp,",
+				"          createdonbehalfby as string,",
+				"          owninguser as string,",
+				"          modifiedby as string,",
+				"          modifiedonbehalfby as string,",
+				"          crc7a_parentbu as string,",
+				"          ownerid as string,",
+				"          {@odata.etag} as string,",
+				"          createdby as string,",
+				"          owningbusinessunit as string,",
+				"          owningteam as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false) ~> dvtable",
+				"bucsv, dvtable join(Name == crc7a_name,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"join1 select(mapColumn(",
+				"          Name,",
+				"          {BU Description},",
+				"          ParentBU = crc7a_bu_demoid",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 alterRow(upsertIf(true())) ~> AlterRow1",
+				"AlterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     truncate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> staging"
+			]
+		}
+	}
+}
